@@ -1,0 +1,32 @@
+#cloud-config
+hostname: $HOSTNAME
+users:
+  - name: core
+    ssh-authorized-keys:
+     - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQD0b7/p6r/OB0ETmuWANndHdVlFzDA1vSD0ByO6/wbcwiz8265oWajfmCmrEhTEG6WMX5RQWZ2L/56Sb+MlcZQpZp77QKikgyqpfJdHuyq1bAIvfbl9Z8Ms1zYQMjdlOVbdNxQV7F3eMoh7bFIoXsDiatbPxEf8H9TkJI1UaPT1Gw== core@example.com
+coreos:
+  units:
+    - name: settimezone.service
+      command: start
+      content: |
+        [Unit]
+        Description=Set the time zone
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/timedatectl set-timezone Asia/Shanghai
+    - name: etcd2.service
+      command: start
+    - name: docker.service
+      command: start
+    - name: 10-eno1.network
+      content: |
+        [Match]
+        Name=eno1
+        [Network]
+        Address=$IPADDRESS
+        Gateway=$GATEWAY
+        DNS=$DNS1
+        DNS=$DNS2
+  update:
+reboot-strategy: etcd-lock
