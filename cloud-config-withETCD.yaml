@@ -1,0 +1,61 @@
+#cloud-config
+hostname: $HOSTNAME
+users:
+  - name: core
+    ssh-authorized-keys:
+     - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQD0b7/p6r/OB0ETmuWANndHdVlFzDA1vSD0ByO6/wbcwiz8265oWajfmCmrEhTEG6WMX5RQWZ2L/56Sb+MlcZQpZp77QKikgyqpfJdHuyq1bAIvfbl9Z8Ms1zYQMjdlOVbdNxQV7F3eMoh7bFIoXsDiatbPxEf8H9TkJI1UaPT1Gw== core@example.com
+  - groups:
+     - sudo
+     - docker
+coreos:
+  units:
+    - name: settimezone.service
+      command: start
+      content: |
+        [Unit]
+        Description=Set the time zone
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/timedatectl set-timezone Asia/Shanghai
+    - name: etcd2.service
+      command: start
+      content: |
+        [Unit]
+        Description=etcd2
+        Conflicts=etcd.service
+        After=network.service etcddownload.service
+        [Service]
+        #User=etcd
+        Type=notify
+        Environment=ETCD_DATA_DIR=/var/lib/etcd2
+        Environment=ETCD_NAME=%m
+        ExecStart=/usr/bin/etcd2
+        Restart=always
+        RestartSec=10s
+        LimitNOFILE=40000
+        TimeoutStartSec=0
+        EnvironmentFile=/etc/etcd2.env
+        [Install]
+        WantedBy=multi-user.target
+    - name: docker.service
+      command: start
+    - name: 10-eno1.network
+      content: |
+        [Match]
+        Name=eno1
+        [Network]
+        Address=$IPADDRESS
+        Gateway=$GATEWAY
+        DNS=$DNS1
+        DNS=$DNS2
+  update:
+    reboot-strategy: etcd-lock
+write_files:
+  - path: /etc/etcd2.env
+    permissions: 0755
+    owner: root
+    content: |
+      ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      ETCD_INITIAL_CLUSTER="$HOSTNAME=http://$IP:2380,$HOSTNAME=http://$IP:2380,$HOSTNAME=http://$IP:2380"
+      ETCD_PROXY=on
