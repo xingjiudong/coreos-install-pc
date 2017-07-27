@@ -13,5 +13,6 @@ coreos-install -d /dev/sda -c cloud-config.yaml
 The Stable channel should be used by production clusters. Versions of Container Linux are battle-tested within the Beta and Alpha channels before being promoted. The current version is Container Linux 1409.7.0.
 
 If you want to ensure you are installing the latest stable version, use the -C option:
+
 coreos-install -d /dev/sda -C stable -c cloud-config.yaml
 
